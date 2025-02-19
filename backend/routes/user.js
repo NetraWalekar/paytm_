@@ -4,6 +4,7 @@ const jwt = require("jwt")
 const User = require("../db")
 const {JWT_SECRET} = require("../config")
 const zod = require("zod")
+const authMiddleware = require("./middleware")
 
 module.exports = router
 
@@ -52,7 +53,8 @@ router.post('/signup',async function(req,res){
     username : zod.string().min(2).email(),
     password : zod.string().min(6).regex(/[!@#$%^&*:;<>,.?]/,"Password must include atleast one special charater").regex(/0-9/,"Password must include atleast one number").regex(/A-Z/,"Password must contain atleast one Uppercase letter")
    })
-   router.post('/signin', function(req,res){
+
+router.post('/signin', function(req,res){
       const {success} = signinBody.safeParse(req.body)
 
       if(!success){
@@ -87,3 +89,27 @@ router.post('/signup',async function(req,res){
       }
    })
 
+   router.use(authMiddleware)
+
+   const updateUser = zod.object({
+    password : zod.string().min(6).regex(/0-9/,"Password must inclulde a number").regex(/A-Z/,"Password must contain atleast one Uppercase character").regex(/[!@#$%^&*:;<>,.?]/,"Password must contain atleast one special character").optional(),
+    lastName : zod.string().min(2).optional(),
+    firstName : zod.string().min(2).optional()
+   })
+
+   router.put('/update',async function(req,res){
+      const{success} = updateUser.safeParse(req.body)
+
+      if(!success){
+        res.status(404).json({
+            msg : "Error while updating information"
+        })
+      }
+
+      await User.updateOne({_id:req.userId},req.body)
+
+      res.json({
+        msg : "Updated successfullyy"
+      })
+
+   })
