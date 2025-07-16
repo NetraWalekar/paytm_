@@ -14,7 +14,7 @@ const signupbody = zod.object({
     lastName : zod.string()
 })
 
-router.post('signup',async(req,res) => {
+router.post('/signup',async(req,res) => {
     const {success} = signupbody.safeParse(req.body)
     if(!success){
         res.status(400).json({
@@ -49,3 +49,34 @@ router.post('signup',async(req,res) => {
     })
 }
 )
+
+
+const signinBody = Zod.object({
+    username : zod.string().email(),
+    password : zod.string()
+})
+
+router.post('/signin',async(req,res) => {
+    const {success} = signinBody.safeParse(req.body)
+    if(!success){
+        res.status(400).send({
+            msg : "invalid credentials"
+        })
+    }
+
+    const user = User.findOne({
+        username : req.body.username,
+        password : req.body.password
+    })
+
+    if(user){
+        const token = user.sign({
+            userId : user._id
+        }, JWT_SECRET)
+
+        res.json({
+            token : token,
+            msg : ""
+        })
+    }
+})
